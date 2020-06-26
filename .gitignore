@@ -1,0 +1,15 @@
+## Data files and data directories
+TEDS_*
+testing*
+data/*
+boundary_data/LSOA/*
+
+## Project specific shell script
+run.sh
+
+# cache dirs
+__pycache__/
+.pytest_cache/
+
+# other
+.travis.yml
