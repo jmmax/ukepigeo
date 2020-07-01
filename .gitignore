@@ -4,6 +4,7 @@ testing*
 data/*
 boundary_data/*
 census_variables.csv
+NOMIS_API_KEY
 
 ## Project specific shell script
 run.sh
