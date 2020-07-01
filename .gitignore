@@ -3,6 +3,7 @@ TEDS_*
 testing*
 data/*
 boundary_data/*
+census_variables.csv
 
 ## Project specific shell script
 run.sh
