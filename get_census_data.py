@@ -5,6 +5,7 @@ import nomiswebAPI
 from geoutils import request_url_to_dataframe
 import geopandas
 import os
+import re
 
 
 def main():
@@ -91,7 +92,8 @@ def main():
         dt.drop(["LSOA_2001", "LSOA_2011", "RECORD_COUNT"], axis=1, inplace=True)
 
         # Write data
-        name = name.replace(" - ", " ").replace(" ", "_")
+        name = re.sub(r"[-!?@/(),]", " ", name)
+        name = re.sub(r'\s+', '_', name)
         out = args.outputfile + "_" + name + "_" + str(year) + "_census.csv.gz"
         print(f"Writing results to {out}...")
         dt.to_csv(out, index=False, compression='gzip')

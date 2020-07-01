@@ -32,7 +32,7 @@ Includes python packages for scraping DEFRA page of [annual pollution statisics]
 
     Python programme for pre-processing and geocoding postcode data (using
     https://postcodes.io/docs). The inputfile is assumed to be a csv file with
-    participant ID column (specified by the'id_col' argument) and subsequent
+    participant ID column (specified by the'idcol' argument) and subsequent
     columns containing postcodes. Multiple columns of postcodes referring to
     different time points may be included in the inputfile where the name of the
     columns specifies the year of data collection i.e. 'Postcodes2008'.
@@ -214,7 +214,7 @@ Testing dataset contains postcode information on 1000 particpants from 1998 and 
     --geocodedata testing_geocoded.csv \
     --idcol ID \
     --outputfile testing \
-    --apikey 'hidden-nomis-api-key' \
+    --apikey 'nomis-api-key' \
     --variables_csv 'testing_census_variables.csv'
     Reading geocoded data...
     Done.
@@ -224,12 +224,12 @@ Testing dataset contains postcode information on 1000 particpants from 1998 and 
     
     Downloading and formating data on UV020...
     Merging UV020 data with geocoded data...
-    Writing results to testingUV020_General_health_2001_census.csv.gz...
+    Writing results to testing_UV020_General_health_2001_census.csv.gz...
     Done.
     
     Downloading and formating data on QS302EW...
     Merging QS302EW data with geocoded data...
-    Writing results to testingQS302EW_General_health_2011_census.csv.gz...
+    Writing results to testing_QS302EW_General_health_2011_census.csv.gz...
     Done.
 
 **Contains National Statistics data © Crown copyright and database right [2020]
