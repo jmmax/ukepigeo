@@ -214,7 +214,7 @@ Testing dataset contains postcode information on 1000 particpants from 1998 and 
     --geocodedata testing_geocoded.csv \
     --idcol ID \
     --outputfile testing \
-    --apikey 'hidden-user-id' \
+    --apikey 'hidden-nomis-api-key' \
     --variables_csv 'testing_census_variables.csv'
     Reading geocoded data...
     Done.
