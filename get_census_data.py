@@ -8,19 +8,24 @@ import os
 
 
 def main():
+
     # Initiate parser and add arguments
     parser = argparse.ArgumentParser(
         description="Python program for querying nomisweb API (https://www.nomisweb.co.uk/) for census data."
                     "Links geocoded data with any data from the 2010 and 2011 census in LSOA geographic level."
-                    "Only includes census data for England and Wales. To find out more about census data for"
-                    " 2010 and 2011 go to https://www.nomisweb.co.uk/query/select/getdatasetbytheme.asp and"
-                    " navigate to 'Census 2001' and 'Census 2011'."
+                    "Only includes census data for England and Wales. To find out more about census data available for"
+                    " 2010 and 2011 go to https://www.nomisweb.co.uk/query/select/getdatasetbytheme.asp"
     )
     parser.add_argument("--geocodedata", "-f", help="Input file with participant IDs, year and geographical "
-                                                    "co-ordinates.")
+                                                    "co-ordinates in eastings/northings (epsg:27700).")
     parser.add_argument("--idcol", "-i", help="Column name for participant IDs.")
-    parser.add_argument("--outputdir", "-o", help="Output directory.")
-    parser.add_argument("--variables_csv", "-c", help="CSV file with info on desired census data.", default=False)
+    parser.add_argument("--outputfile", "-o", help="Output filename.")
+    parser.add_argument("--variables_csv", "-c", help="CSV file with info on census data to download."
+                                                      "Must have the format: VARIABLE (name of census variable),"
+                                                      "CENSUS_YEAR (2001 or 2011) and CENSUS_VAR_CODE "
+                                                      "(code selected from "
+                                                      "https://www.nomisweb.co.uk/query/select/getdatasetbytheme.asp)",
+                        default=False)
     parser.add_argument("--apikey", "-k", help="API key obtained after registering on https://www.nomisweb.co.uk/.",
                         default=None)
 
@@ -36,21 +41,23 @@ def main():
 
     # Read in geocoded data
     print("Reading geocoded data...")
+    typedict = {args.idcol: str}
     data = pd.read_csv(args.geocodedata,
-                       na_values=['Postcode not found', 'Invalid Postcode'])
+                       na_values=['Postcode not found', 'Invalid postcode'],
+                       dtype=typedict)
     print("Done.")
 
 
     # Link data with 2001 and 2011 LSOA geography
     print("\nLinking geocoded data with 2001 and 2011 LSOA"
-          " boundary shapefiles from https://census.ukdataservice.ac.uk/get-data/boundary-data.aspx...\n")
+          " boundary shapefiles from https://census.ukdataservice.ac.uk/get-data/boundary-data.aspx...")
     data = link_geocode_with_LSOA(data, os.path.join("boundary_data", "LSOA", "EW_LSOA_2001.shp"))
     data = data[[args.idcol, 'eastings', 'northings', 'year', 'zonecode']]
     data.rename(columns={'zonecode': 'LSOA_2001'}, inplace=True)
     data = link_geocode_with_LSOA(data, os.path.join("boundary_data", "LSOA", "EW_LSOA_2011.shp"))
     data = data[[args.idcol, 'year', 'LSOA_2001', 'code']]
     data.rename(columns={'code': 'LSOA_2011'}, inplace=True)
-
+    print("Done.\n")
 
     # Read in info on which census data to download
     variables = pd.read_csv(args.variables_csv)
@@ -58,24 +65,37 @@ def main():
     # Initalise nomisAPI class
     nom = nomiswebAPI.NomisAPI(args.apikey)
 
-    # PUT INTO FOR LOOP FOR ALL
-    name, cell_info, url = nom.get_url('KS611EW to KS613EW')
-    census_data = request_url_to_dataframe(url, header=0)
+    # Loop through variables and write
+    for index, year, code in variables[['CENSUS_YEAR', 'CENSUS_VAR_CODE']].itertuples():
+        mergecol = "LSOA_" + str(year)
+        # Download census data
+        print(f"Downloading and formating data on {code}...")
+        name, cell_info, url = nom.get_url(code)
+        census_data = request_url_to_dataframe(url, header=0)
 
-    # Change the column values to to names based on metadata
-    for key, value in cell_info.items():
-        census_data[key] = census_data[key].astype('str').map(value)
+        # Check if data larger than 1m cell limit - if so download remaining!
+        offset = 1000000
+        while census_data.shape[0] >= offset:
+            url = url + "&" + "recordoffset=" + str(offset)
+            extra_census_data = request_url_to_dataframe(url, header=0)
+            census_data = census_data.append(extra_census_data)
+            offset += 1000000
 
-    print(census_data.head())
+        # Change the column values to to names based on metadata
+        for key, value in cell_info.items():
+            census_data[key] = census_data[key].astype('str').map(value)
 
-    dt = pd.merge(data, census_data, left_on="LSOA_2011", right_on="GEOGRAPHY_CODE", how="outer")
-    print(dt.head())
-    print(data.shape)
-    print(dt.shape)
+        # Merging with geocoded data
+        print(f"Merging {code} data with geocoded data...")
+        dt = pd.merge(data, census_data, left_on=mergecol, right_on="GEOGRAPHY_CODE", how="inner")
+        dt.drop(["LSOA_2001", "LSOA_2011", "RECORD_COUNT"], axis=1, inplace=True)
 
-    # for index, code in variables[['CENSUS_YEAR', 'CENSUS_VAR_CODE']].iteritems():
-    #     name, cell_info, url = nom.get_url(code)
-    #     census_data = request_url_to_dataframe(url)
+        # Write data
+        name = name.replace(" - ", " ").replace(" ", "_")
+        out = args.outputfile + name + "_" + str(year) + "_census.csv.gz"
+        print(f"Writing results to {out}...")
+        dt.to_csv(out, index=False, compression='gzip')
+        print("Done.\n")
 
 
 def link_geocode_with_LSOA(data, shpfilename):

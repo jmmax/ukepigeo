@@ -34,6 +34,25 @@ def geocode(postcode):
     raise NotImplementedError
 
 
+def random_postcode(n):
+    """
+    Generate list of random postcodes of length n.
+    :param n: length.
+    :return: list of random postcodes of length n.
+    """
+    N = 0
+    plist = []
+    while N < n:
+        url = 'https://api.postcodes.io/random/postcodes'
+        response = requests.get(url)
+        if response.status_code == 200:
+            plist.append(response.json()["result"]["postcode"])
+            N += 1
+        else:
+            continue
+    return plist
+
+
 def find_nearest_idx(array, value):
     """
     Returns indicies of an column that are closest to a value (includes all occurances).

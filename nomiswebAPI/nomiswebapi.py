@@ -17,8 +17,8 @@ class NomisAPI:
 
     def datasets_info(self):
         """
-
-        :return:
+        Scrape information on all census variables available to download from nomisweb.
+        :return: dictionary of KeyFamilies and metadata.
         """
         # get table html from url
         url = "https://www.nomisweb.co.uk/api/v01/dataset/def.htm"
@@ -56,9 +56,9 @@ class NomisAPI:
 
     def get_metadata(self, code):
         """
-
-        :param code:
-        :return:
+        Get codelists for metadata for specific KeyFamily
+        :param code: code for KeyFamily.
+        :return: name of KeyFamily, code, metadata.
         """
         # Select code from datasets
         name = [name for name in self.datasets.keys() if re.match(code, name)][0]
@@ -102,17 +102,20 @@ class NomisAPI:
 
     def get_url(self, code):
         """
-
-        :param code:
-        :return:
+        Return url for downloading data.
+        :param code: code for KeyFamily.
+        :return: download url.
         """
         # Get code info
         name, key_id, metadata = self.get_metadata(code)
 
-        # GEOGRAPHY and MEASURE and RURAL_URBAN as seperate objects
+        # GEOGRAPHY, MEASURE, C_SEX and RURAL_URBAN as seperate objects
         geog = metadata.pop("GEOGRAPHY", None)
         measure = metadata.pop("MEASURES", None)
         rural_urban = metadata.pop("RURAL_URBAN", None)
+
+        # Remove some metadata
+        metadata.pop("FREQ")
 
         # Create empty dictionary for params
         params = []
@@ -120,6 +123,18 @@ class NomisAPI:
         if not geog:
             raise ValueError(f"Error: {code} doesn't have associated"
                              f" geography and is not supported by the program.")
+
+        # Set date to latest
+        params.append('date=latest')
+
+        # Set geography type as LSOA for 2001 and 2011
+        if "2001" in metadata["TIME"].keys():
+            params.append('geography=1275068417...1275102794')
+        if "2011" in metadata["TIME"].keys():
+            params.append('geography=1249902593...1249937345')
+
+        # Remove time metadata
+        metadata.pop("TIME")
 
         # Always select value for the measures variable
         if measure:
@@ -133,20 +148,8 @@ class NomisAPI:
         for key, subdict in metadata.items():
             params.append(key.lower() + "=" + ','.join(subdict.keys()))
 
-
-        # Set geographu type as LSOA for 2001 and 2011
-        if 2001 in metadata["TIME"].keys():
-            params.append('geography=1275068417...1275102794')
-        if 2011 in metadata["TIME"].keys():
-            params.append('geography=1249902593...124993734')
-
-        # Set date to latest
-        params.append('date=latest')
-
         # Set columns to select from data
-        metadata.pop("FREQ")
-        metadata.pop("TIME")
-        params.append('select=geography_name,geography_code,obs_value'
+        params.append('select=record_count,geography_name,geography_code,obs_value'
                       + ',' + ','.join(metadata.keys()).lower())
 
         # Include unique ID

@@ -26,7 +26,6 @@ print(tabulate(shp_2001.head(),
                tablefmt='orgtbl', showindex="never"))
 
 
-
 # 2011 LSOA
 
 shp_eng_2011 = geopandas.read_file(

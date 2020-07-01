@@ -16,8 +16,8 @@ def main():
     parser.add_argument("--geocodedata", "-f", help="Input file with participant IDs, year and geographical "
                                                     "co-ordinates.")
     parser.add_argument("--idcol", "-i", help="Column name for participant IDs.")
-    parser.add_argument("--outputdir", "-o", help="Output directory.")
-    parser.add_argument("--pollutants", "-p", help="List of pollutants seperated by column.",
+    parser.add_argument("--outputfile", "-o", help="Output filename.")
+    parser.add_argument("--pollutants", "-p", help="List of pollutants separated by column.",
                         default='PM10,PM2.5,NO2,NOX,SO2,OZONE,BENZENE')
 
     # Read arguments from command line
@@ -62,9 +62,8 @@ def main():
     p_data = sc.linking_func(data, args.idcol)
 
     # Write data
-    today = date.today()
-    today = today.strftime("%m_%d_%y")
-    out = args.outputdir + "pollution_data_" + today + ".csv"
+
+    out = args.outputfile + "_pollution_data" + ".csv"
     print(f"Writing results to {out}...")
     p_data.to_csv(out, index=False)
     print("Done.")

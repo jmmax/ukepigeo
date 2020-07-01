@@ -4,15 +4,17 @@ import multiprocessing as mp
 import geoutils
 import re
 import sys
+from tabulate import tabulate
 
 def main():
     # Initiate parser and add arguments
     parser = argparse.ArgumentParser(
-        description="Python programme for pre-processing and geocoding postcode data. The inputfile is "
-                    "assumed to be a csv file with participant ID column (specified by the"
-                    "'id_col' argument) and subsequent columns containing postcodes. Multiple columns "
-                    "of postcodes referring to different time points may be included in the inputfile "
-                    "where the name of the columns specifies the year of data collection i.e. 'Postcodes2008'."
+        description="Python programme for pre-processing and geocoding postcode data (using "
+                    "https://postcodes.io/docs). The inputfile is assumed to be a csv file "
+                    "with participant ID column (specified by the'id_col' argument) and subsequent"
+                    " columns containing postcodes. Multiple columns of postcodes referring to "
+                    "different time points may be included in the inputfile where the name of the"
+                    " columns specifies the year of data collection i.e. 'Postcodes2008'."
     )
     parser.add_argument("--inputfile", "-f", help="Input file with participant IDs and postcodes.")
     parser.add_argument("--idcol", "-i", help="Column name for participant IDs.")
@@ -29,31 +31,29 @@ def main():
     ).dropna()
     print("Done.")
 
+
     # Clean and geocode postcodes
     print("Number of cores available: ", mp.cpu_count())
     print(f"Geocoding postcodes with {args.threads} core(s)...")
     pool = mp.Pool(int(args.threads))
     dt = pool.map(
-        geoutils.geocode_uk,
+        apply_geo_fun,
         [
-            postcode for pid, orig_col, postcode, year in data.itertuples(index=False)
+            (pid, year, postcode) for pid, orig_col, postcode, year in data.itertuples(index=False)
         ]
     )
     pool.close()
 
-    data = pd.concat(
-        [
-            data[args.idcol].astype(str),
-            data['year'],
-            pd.DataFrame(dt)
-        ], axis=1
-    )
+    data = pd.DataFrame(dt)
     data.columns = [args.idcol, "year", "postcode", "eastings", "northings", "country"]
     print("Done.")
 
     # Print sample size of participants in countries at different time points
-    print("\nFrequency table for country of residence:")
-    print(pd.crosstab(data["year"], data["country"], margins=True))
+    print("\nFrequency table for country of residence:\n")
+    ct = pd.crosstab(data["year"], data["country"], margins=True)
+    print(tabulate(
+        ct, ct.columns.values.tolist(), tablefmt='orgtbl'
+    ))
     print("\n")
 
     # Write
@@ -95,6 +95,16 @@ def read_and_format_data(inputfile, idcol):
 
     # Return pd.DataFrame
     return data
+
+def apply_geo_fun(tup):
+    """
+    Function to add ID and year variables to list returned from geocode_uk function.
+    :param tup: tuple of (pid, year, postcode).
+    :return: list of ID, year and data from geocode_uk function.
+    """
+    return list(tup[:2]) + geoutils.geocode_uk(tup[2])
+
+
 
 
 if __name__ == "__main__":
