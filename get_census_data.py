@@ -92,7 +92,7 @@ def main():
 
         # Write data
         name = name.replace(" - ", " ").replace(" ", "_")
-        out = args.outputfile + name + "_" + str(year) + "_census.csv.gz"
+        out = args.outputfile + "_" + name + "_" + str(year) + "_census.csv.gz"
         print(f"Writing results to {out}...")
         dt.to_csv(out, index=False, compression='gzip')
         print("Done.\n")
