@@ -195,6 +195,14 @@ Testing dataset contains postcode information on 1000 particpants from 1998 and 
 
 ## Example with testing dataset (link with general health variable from 2001 and 2011 census)
 
+### Download LSOA boundaries for linking census data
+
+    mkdir boundary_data/LSOA
+    
+    python download_boundary_esri_shapefile.py
+
+### Run script
+
     head testing_census_variables.csv
     VARIABLE,CENSUS_YEAR,CENSUS_VAR_CODE
     General health,2001,UV020
