@@ -1,7 +1,7 @@
 
 Repository containing python scripts for obtaining geographical variables for a study based in England and Wales.
-Includes python packages for scraping DEFRA page of [annual pollution statisics](https://uk-air.defra.gov.uk/data/pcm-data)
- and for querying [Nomisweb](https://www.nomisweb.co.uk/) census data.
+Includes python packages for scraping DEFRA page of [annual pollution statisics](https://uk-air.defra.gov.uk/data/pcm-data).
+Census data was is obtained using [UKCensusAPI](https://github.com/virgesmith/UKCensusAPI).
  
 
 # Table of Contents
@@ -163,15 +163,23 @@ Testing dataset contains postcode information on 1000 particpants from 1998 and 
     
 # Query Nomisweb API and link with geocoded data
 
-    python get_census_data.py --help
-    usage: get_census_data.py [-h] [--geocodedata GEOCODEDATA] [--idcol IDCOL]
-                              [--outputfile OUTPUTFILE]
-                              [--variables_csv VARIABLES_CSV] [--apikey APIKEY]
+    Follow instructions on [UKCensusAPI](https://github.com/virgesmith/UKCensusAPI) to get generate scripts for getting data.
+    Run the get_census_data.py programme to link with geocoded data.
+    
+    usage: get_census_data.py [-h] [--geocodedata GEOCODEDATA]
+                              [--shapefile SHAPEFILE]
+                              [--shapefile_area_id SHAPEFILE_AREA_ID]
+                              [--idcol IDCOL] [--out OUT] [--api_dir API_DIR]
+                              [--census_table_info CENSUS_TABLE_INFO]
     
     Python program for querying nomisweb API (https://www.nomisweb.co.uk/) for
-    census data.Links geocoded data with any data from the 2010 and 2011 census in
-    LSOA geographic level.Only includes census data for England and Wales. To find
-    out more about census data available for 2010 and 2011 go to
+    census data.Links geocoded data with any data from the nomisweb. A shapefile
+    of the census geography must be downloaded and it must match the geography of
+    the data downloaded from Nomisweb. Scripts for getting census data from
+    Nomisweb arecreated using UKCensusAPI
+    (https://github.com/virgesmith/UKCensusAPI) before running this program.
+    Nomisweb mostly includes census data for England and Wales only. To find out
+    more about census data available go to
     https://www.nomisweb.co.uk/query/select/getdatasetbytheme.asp
     
     optional arguments:
@@ -179,24 +187,28 @@ Testing dataset contains postcode information on 1000 particpants from 1998 and 
       --geocodedata GEOCODEDATA, -f GEOCODEDATA
                             Input file with participant IDs, year and geographical
                             co-ordinates in eastings/northings (epsg:27700).
+      --shapefile SHAPEFILE, -s SHAPEFILE
+                            Pathway to shapefile.
+      --shapefile_area_id SHAPEFILE_AREA_ID
+                            Column name of geographical area ids in shapefile.
       --idcol IDCOL, -i IDCOL
                             Column name for participant IDs.
-      --outputfile OUTPUTFILE, -o OUTPUTFILE
-                            Output filename.
-      --variables_csv VARIABLES_CSV, -c VARIABLES_CSV
-                            CSV file with info on census data to download.Must
-                            have the format: VARIABLE (name of census
-                            variable),CENSUS_YEAR (2001 or 2011) and
-                            CENSUS_VAR_CODE (code selected from https://www.nomisw
-                            eb.co.uk/query/select/getdatasetbytheme.asp)
-      --apikey APIKEY, -k APIKEY
-                            API key obtained after registering on
-                            https://www.nomisweb.co.uk/.
+      --out OUT, -o OUT     Output filename.
+      --api_dir API_DIR, -d API_DIR
+                            Directory with Nomisweb API scripts generated
+                            interactively via UKCensusAPI.
+      --census_table_info CENSUS_TABLE_INFO, -c CENSUS_TABLE_INFO
+                            CSV file with info on which census tables to
+                            download.Must have the format: VARIABLE (name of
+                            census table) andCENSUS_VAR_CODE (code for census
+                            table - must have a corresponding script in the 'api-
+                            dir').
 
 
 ## Example with testing dataset (link with general health variable from 2001 and 2011 census)
 
-### Download LSOA boundaries for linking census data
+
+### Download shapefiles for linking census data
 
     mkdir boundary_data/LSOA
     
@@ -204,33 +216,32 @@ Testing dataset contains postcode information on 1000 particpants from 1998 and 
 
 ### Run script
 
+    ls nomis_api_scripts/
+    KS101EW.R  KS101EW.py  KS101EW_metadata.json KS102EW.R  KS102EW.py  KS102EW_metadata.json NOMIS_API_KEY  lad_codes.json
+
     head testing_census_variables.csv
     VARIABLE,CENSUS_YEAR,CENSUS_VAR_CODE
-    General health,2001,UV020
-    General Health,2011,QS302EW
+    Usual resident population,2011,KS101EW
+    Age structure,2011,KS102EW
 
 
     python get_census_data.py \
     --geocodedata testing_geocoded.csv \
     --idcol ID \
-    --outputfile testing \
+    --shapefile boundary_data/LSOA/EW_lsoa_2011.shp \
+    --shapefile_area_id zonecode \
+    --api_dir nomis_api_scripts \
+    --out testing \
     --apikey 'nomis-api-key' \
-    --variables_csv 'testing_census_variables.csv'
+    --census_table_info 'testing_census_variables.csv'
     Reading geocoded data...
     Done.
     
-    Linking geocoded data with 2001 and 2011 LSOA boundary shapefiles from https://census.ukdataservice.ac.uk/get-data/boundary-data.aspx...
+    Linking geocoded data with shapefile boundary shapefiles from https://census.ukdataservice.ac.uk/get-data/boundary-data.aspx...
     Done.
     
-    Downloading and formating data on UV020...
-    Merging UV020 data with geocoded data...
-    Writing results to testing_UV020_General_health_2001_census.csv.gz...
-    Done.
-    
-    Downloading and formating data on QS302EW...
-    Merging QS302EW data with geocoded data...
-    Writing results to testing_QS302EW_General_health_2011_census.csv.gz...
-    Done.
+    Writing results to testing.csv.gz...
+
 
 **Contains National Statistics data © Crown copyright and database right [2020]
 Contains OS data © Crown copyright [and database right] (2020)**

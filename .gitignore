@@ -3,8 +3,9 @@ TEDS_*
 testing*
 data/*
 boundary_data/*
-census_variables.csv
+census_variables*
 NOMIS_API_KEY
+/nomis_api_scripts/
 
 ## Project specific shell script
 run.sh
