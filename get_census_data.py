@@ -27,7 +27,7 @@ def main():
     parser.add_argument("--api_dir", "-d", help="Directory with Nomisweb API scripts generated interactively via"
                                                 " UKCensusAPI.")
     parser.add_argument("--census_table_info", "-c", help="CSV file with info on which census tables to download."
-                                                          "Must have the format: VARIABLE (name of census table) and"
+                                                          "Must have the format: TABLE (name of census table) and"
                                                           "CENSUS_VAR_CODE (code for census table - must have a"
                                                           " corresponding script in the 'api-dir').", default=False)
 
@@ -50,25 +50,28 @@ def main():
     print("Done.\n")
 
     # Read in info on which census data to download
-    variables = pd.read_csv(args.census_table_info)
+    table_info = pd.read_csv(args.census_table_info)
 
     # Get all nomisweb data
     data_list = []
-    for index, cname, ctable in variables[['VARIABLE', 'CENSUS_VAR_CODE']].itertuples():
-        pysc = open(os.path.join(args.api_dir, ctable + ".py")).read()
+    for index, script, ctable in table_info[['SCRIPT', 'CENSUS_VAR_CODE']].itertuples():
+        print("Downloading data for " + ctable + "...")
+        pysc = open(os.path.join(args.api_dir, script + ".py")).read()
         exec(pysc)
         cdata = locals()[ctable]
         os.system("rm " + ctable + "*")
 
         # add context - descriptions of values to the CELL column
         api = CensusApi.Nomisweb(".")
-        api.contextify(ctable, "CELL", cdata)
+        api.contextify(ctable, cdata.columns[1], cdata)
 
         # reshape data
-        cdata.CELL_NAME = cdata.CELL_NAME.str.replace("[(0!?:;,)%*.]+", ".", regex=True)
+        if cdata.columns[3] != "CELL_NAME":
+            cdata.rename(columns={cdata.columns[3]: "CELL_NAME"}, inplace=True)
+        cdata.CELL_NAME = cdata.CELL_NAME.str.replace("[(!?:;,)%*.]+", ".", regex=True)
         cdata.CELL_NAME = cdata.CELL_NAME.str.replace(" ", ".", regex=True)
-        cdata.drop("CELL", axis=1, inplace=True)
-        cdata = cdata.pivot_table(index="GEOGRAPHY_CODE", columns="CELL_NAME",values="OBS_VALUE").reset_index()
+        cdata.drop(cdata.columns[1], axis=1, inplace=True)
+        cdata = cdata.pivot_table(index="GEOGRAPHY_CODE", columns="CELL_NAME", values="OBS_VALUE").reset_index()
         cdata.index.name = None
 
         # change column names to include census table
@@ -78,12 +81,17 @@ def main():
 
         # Append to list
         data_list.append(cdata)
+        print(cdata.head())
+        print("Done.")
 
     # merge list of nomisweb data
     nomisdata = reduce(lambda df1, df2: pd.merge(df1, df2, on='GEOGRAPHY_CODE'), data_list)
 
     # merge geocoded data with nomisweb data
     data = pd.merge(data, nomisdata, left_on=args.shapefile_area_id, right_on="GEOGRAPHY_CODE", how="inner")
+    data.drop(['eastings', 'northings', 'year', 'code', 'GEOGRAPHY_CODE'], axis=1,inplace=True)
+    print(data.head())
+    print(data.columns)
 
     # write output
     out = args.out + "_nomisweb.csv.gz"

@@ -6,6 +6,9 @@ boundary_data/*
 census_variables*
 NOMIS_API_KEY
 /nomis_api_scripts/
+.idea/
+/land_cover_data/
+/traffic_data/
 
 ## Project specific shell script
 run.sh
