@@ -100,10 +100,9 @@ def main():
 
 def link_geocode_with_shapefile(data, shpfilename):
     """
-    Download boundary shapefiles for LSOA geography from 2001 or 2001 and spatial join with geocoded data.
-    Data with eastings and northings column (BNG co-ordinate reference system).
-    :param data: Geocoded data
-    :param shpfilename: Boundary shapefile for reading.
+    Link co-ordinate data with geographical regions.
+    :param data: Geocoded data with eastings and northings columns (BNG co-ordinate reference system).
+    :param shpfilename: URL to or downloaded boundary shapefile for reading.
     :return:
     """
     # Brittish national grid (BNG) co-ordinate reference system (CRS)
