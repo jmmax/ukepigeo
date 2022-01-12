@@ -38,7 +38,7 @@ parsel==1.5.2
 parso==0.7.0
 pexpect==4.8.0
 pickleshare==0.7.5
-pipenv==2018.11.26
+pipenv==2022.1.8
 pluggy==0.13.1
 prompt-toolkit==3.0.4
 psutil==5.7.0
