@@ -69,7 +69,7 @@ soupsieve==2.0.1
 tabulate==0.8.3
 tqdm==4.46.0
 traitlets==4.3.3
-Twisted==20.3.0
+Twisted==22.1.0
 urllib3==1.25.8
 virtualenv==16.6.2
 virtualenv-clone==0.5.3
