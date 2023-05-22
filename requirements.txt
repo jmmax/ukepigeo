@@ -59,7 +59,7 @@ pytest-runner==5.2
 python-dateutil==2.8.1
 pytz==2020.1
 queuelib==1.5.0
-requests==2.23.0
+requests==2.31.0
 Rtree==0.9.4
 Scrapy==1.6.0
 service-identity==18.1.0
